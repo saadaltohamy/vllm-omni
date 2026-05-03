@@ -2063,10 +2063,22 @@ class OmniOpenAIServingSpeech(OpenAIServing, AudioMixin):
                 "ref_audio" in prompt,
             )
 
+            # Apply extra_params from the request to sampling params
+            import copy
+
+            sampling_params_list = copy.deepcopy(self._diffusion_engine.default_sampling_params_list)
+            if request.extra_params is not None:
+                if not isinstance(request.extra_params, dict):
+                    raise ValueError("extra_params must be a JSON object/dict.")
+                if sampling_params_list[0].extra_args is None:
+                    sampling_params_list[0].extra_args = {}
+                sampling_params_list[0].extra_args.update(request.extra_params)
+                logger.info("Applied extra_params to diffusion: %s", request.extra_params)
+
             generator = self._diffusion_engine.generate(
                 prompt=prompt,
                 request_id=request_id,
-                sampling_params_list=self._diffusion_engine.default_sampling_params_list,
+                sampling_params_list=sampling_params_list,
                 output_modalities=["audio"],
             )
 
